@@ -2,9 +2,7 @@
 #### Overview
 This repository contains the supplementary materials associated with the implementation of our submission titled "Complications-aware Dynamical Classifier Ensemble for Unplanned Readmission Risk Prediction in Patients with Cirrhosis." The aim of this work was to develop a specialized framework for predictive tasks based on electronic health records (EHRs), specifically focusing on unplanned readmission risk prediction in patients with cirrhosis. 
 
-The implementation of the framework involved two key components. Firstly, to improve the generation of the pool of classifiers, patient subgroups were characterized, and interpretable rules were extracted. These rules represented the presence or absence of complications and comorbidity combinations. By incorporating these rules, the framework gained insights into why individualized predictions are better supported by classifiers trained on specific subsets of data.
-
-Secondly, diagnosis-based regions of competence were integrated into the framework to facilitate the dynamic selection of classifiers. This was accomplished using the META-DES framework.
+The implementation of the framework involved two key components. Firstly, to improve the generation of the pool of classifiers, patient subgroups were characterized, and interpretable rules were extracted. These rules represented the presence or absence of complications and comorbidity combinations. By incorporating these rules, the framework gained insights into why individualized predictions are better supported by classifiers trained on specific subsets of data. Secondly, diagnosis-based regions of competence were integrated into the framework to facilitate the dynamic selection of classifiers. This was accomplished using the META-DES framework.
 
 The implementation of the framework relied on the DESlib library <https://github.com/scikit-learn-contrib/DESlib>
 
@@ -290,6 +288,24 @@ The diagnosis-based region of competence consisted of equal number of positive a
     pred_neighbor_feature['negative_neighbor'] = pred_array
 
     meta_feature = pd.concat([pred_feature, pred_neighbor_feature], axis=1)
+
+#### Train the base classifiers using PyCaret
+
+    dataset_path = 'subsets/...'
+    dataset_list = os.listdir(dataset_path)
+    path = os.getcwd().replace('\\', '/') + '/model/.../'
+    print(path)
+    if not os.path.exists(path):
+        os.mkdir(path)
+    to_dir = path
+    for datafile in dataset_list:
+        final_df = pd.read_csv(dataset_path + '/' + datafile, encoding='ANSI')
+        exp = setup(data=final_df, target='label', session_id=123, fix_imbalance=True)
+        for model in ['gbc','rf','ada','qda','lr','xgboost','et','lightgbm','knn','lda','dt','nb']:
+            clf = create_model(model, cross_validation=True)
+            tuned = tune_model(clf, optimize = 'Accuracy')
+            if pull()['Accuracy'][0] > 0.85:
+                save_model(tuned, to_dir + datafile + '_' + model, model_only=True)
 
 #### Evaluate the proposed framework
 
