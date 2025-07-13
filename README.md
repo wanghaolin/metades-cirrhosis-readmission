@@ -1,8 +1,15 @@
 ### Complications-aware Dynamic Classifier Selection for Unplanned Readmission Risk Prediction in Patients with Cirrhosis
 #### Overview
-This repository contains the supplementary materials associated with the implementation of our submission titled "Complications-aware Dynamic Classifier Selection for Unplanned Readmission Risk Prediction in Patients with Cirrhosis." The aim of this work was to develop a specialized framework for predictive tasks based on electronic health records (EHRs), specifically focusing on unplanned readmission risk prediction in patients with cirrhosis. 
+This repository contains the supplementary materials associated with the implementation of our submission titled "Complications-aware Dynamic Classifier Selection for Unplanned Readmission Risk Prediction in Patients with Cirrhosis." This study aims to develop an interpretable framework that dynamically aligns patient subgroups with optimized classifier selection. Specifically, the aim of this study are threefold: 
 
-The implementation of the framework involved two key components. Firstly, to improve the generation of the pool of classifiers, patient subgroups were characterized, and interpretable rules were extracted. These rules represented the presence or absence of complications and comorbidity combinations. By incorporating these rules, the framework gained insights into why individualized predictions are better supported by classifiers trained on specific subsets of data. Secondly, diagnosis-based regions of competence were integrated into the framework to facilitate the dynamic selection of classifiers. This was accomplished using the META-DES framework.
+(1) to generate and characterize patient subgroups through clinically meaningful rules based on complication and comorbidity patterns; 
+
+(2) to design a tailored region of competence incorporating medical diagnoses, enabling optimized dynamic selection of patient-specific predictive models;
+
+(3) to establish a paradigm shift from conventional one-size-fits-all approaches to an adaptive methodology that accounts for heterogeneous patient profiles. 
+
+By integrating medical knowledge with dynamic ensemble selection, this approach not only improves predictive performance but also provides interpretable insights into classifier selection rationale for diverse clinical subgroups.
+This was accomplished using the META-DES framework.
 
 The implementation of the framework relied on the DESlib library <https://github.com/scikit-learn-contrib/DESlib>
 
