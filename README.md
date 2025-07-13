@@ -1,23 +1,28 @@
 ### Complications-aware Dynamic Classifier Selection for Unplanned Readmission Risk Prediction in Patients with Cirrhosis
+
 #### Overview
-This repository contains the supplementary materials associated with the implementation of our submission titled "Complications-aware Dynamic Classifier Selection for Unplanned Readmission Risk Prediction in Patients with Cirrhosis." This study aims to develop an interpretable framework that dynamically aligns patient subgroups with optimized classifier selection. Specifically, the aim of this study are threefold: 
 
-(1) to generate and characterize patient subgroups through clinically meaningful rules based on complication and comorbidity patterns; 
+This repository contains supplementary materials for the implementation of our submission titled **"Complications-aware Dynamic Classifier Selection for Unplanned Readmission Risk Prediction in Patients with Cirrhosis."**
 
-(2) to design a tailored region of competence incorporating medical diagnoses, enabling optimized dynamic selection of patient-specific predictive models;
+**Our approach aims to:**
 
-(3) to establish a paradigm shift from conventional one-size-fits-all approaches to an adaptive methodology that accounts for heterogeneous patient profiles. 
+1. **Generate and characterize patient subgroups** using clinically meaningful rules based on complication and comorbidity patterns.
+2. **Design a tailored region of competence** by incorporating medical diagnoses, enabling optimized dynamic selection of patient-specific predictive models.
+3. **Establish a paradigm shift** from conventional one-size-fits-all approaches to an adaptive methodology that accounts for heterogeneous patient profiles.
 
-By integrating medical knowledge with dynamic ensemble selection, this approach not only improves predictive performance but also provides interpretable insights into classifier selection rationale for diverse clinical subgroups.
-This was accomplished using the META-DES framework.
+By integrating medical knowledge with dynamic ensemble selection, our method not only improves predictive performance but also provides interpretable insights into the rationale behind classifier selection for each patient. This framework is implemented using the META-DES algorithm, relying on the [DESlib library](https://github.com/scikit-learn-contrib/DESlib).
 
-The implementation of the framework relied on the DESlib library <https://github.com/scikit-learn-contrib/DESlib>
+> **Note:** The modifications made are not compatible with existing DES models.
 
-**Noting that those changes are incompatible with current DES models.**
+---
 
-#### Update deslib\des\meta-des.py
-A new set of meta-feature (meta_feature_f6) was concatenated with other meta-features.
+#### Modifications in `deslib\des\meta-des.py`
 
+A new set of meta-features (`meta_feature_f6`) was concatenated with existing meta-features.
+
+**Example function:**
+
+```python
     def compute_meta_features(self, scores, idx_neighbors, idx_neighbors_op, meta_feature_f6):
 
         idx_neighbors = np.atleast_2d(idx_neighbors)
@@ -54,10 +59,11 @@ A new set of meta-feature (meta_feature_f6) was concatenated with other meta-fea
         print(meta_feature_vectors.shape)
 
         return meta_feature_vectors
+```
 
+**Classifier selection based on maximum competence:**
 
-Select the classifiers with the highest competence score.
-
+```python
     def select(self, competences):
 
         if competences.ndim < 2:
@@ -78,9 +84,11 @@ Select the classifiers with the highest competence score.
         selected_classifiers[~np.any(selected_classifiers, axis=1), :] = True
 
         return selected_classifiers
+```
 
-Estimate the competence score with the meta-feature f6.
+**Competence estimation with meta-feature f6:**
 
+```python
     def estimate_competence_from_proba(self, neighbors, probabilities, meta_feature_f6,
                                        distances=None):
 
@@ -105,10 +113,15 @@ Estimate the competence score with the meta-feature f6.
         print(competences)
 
         return competences
+```
 
-#### Update deslib\base.py
-The new set of meta-feature was passed to the the predict() and predict_proba() to enhance dynamic classifiers selection.
+---
 
+#### Modifications in `deslib\base.py`
+
+The new set of meta-features is now passed to the `predict()` and `predict_proba()` methods to enhance dynamic classifier selection.
+
+```python
     def predict(self, X, meta_feature):
 
         X = self._check_predict(X)
@@ -186,10 +199,13 @@ The new set of meta-feature was passed to the the predict() and predict_proba() 
                                                        DFP_mask, X1)
                 probas[inds] = probas_ds
         return probas
+```
+---
 
-#### Update deslib\des\base.py
-The new set of meta-feature was passed to the the classify_with_ds() and predict_proba_with_ds().
+#### Modifications in `deslib\des\base.py`
 
+The new meta-feature set is also passed to `classify_with_ds()` and `predict_proba_with_ds()`.
+```python
     def classify_with_ds(self, predictions, probabilities=None,
                          competence_region=None, distances=None,
                          DFP_mask=None, meta_feature=None):
@@ -231,9 +247,13 @@ The new set of meta-feature was passed to the the classify_with_ds() and predict
 
         return predicted_proba
 
-#### Generating the diagnosis-based region of competence and new meta-features
-The diagnosis-based region of competence consisted of equal number of positive and negative data samples to allow for a balanced estimation of the performance of base classifiers. The meta-feature should be extracted for training set and test set respectively.
-    
+```
+---
+
+#### Generating the Diagnosis-based Region of Competence and New Meta-Features
+
+The diagnosis-based region of competence consists of an equal number of positive and negative samples, enabling balanced estimation of base classifier performance. The meta-features include the predictions of base classifiers for these neighbors.
+```python
     if extract_meta_feature == True:
         for col in diagnosis_features:
             preds = []
@@ -295,9 +315,19 @@ The diagnosis-based region of competence consisted of equal number of positive a
     pred_neighbor_feature['negative_neighbor'] = pred_array
 
     meta_feature = pd.concat([pred_feature, pred_neighbor_feature], axis=1)
+```
+---
 
-#### Train the base classifiers using PyCaret
+#### Training Base Classifiers with PyCaret
 
+**Training process:**
+
+1. Load dataset.
+2. Set up the PyCaret environment.
+3. Tune models.
+4. Save models that achieve accuracy above 0.85.
+
+```python
     dataset_path = 'subsets/...'
     dataset_list = os.listdir(dataset_path)
     path = os.getcwd().replace('\\', '/') + '/model/.../'
@@ -313,16 +343,20 @@ The diagnosis-based region of competence consisted of equal number of positive a
             tuned = tune_model(clf, optimize = 'Accuracy')
             if pull()['Accuracy'][0] > 0.85:
                 save_model(tuned, to_dir + datafile + '_' + model, model_only=True)
+```
+---
 
-#### Evaluate the proposed framework
+#### Evaluating the Proposed Framework
 
-    method = METADES(pool_classifiers, random_state=rng, k=k, Kp=Kp, DSEL_perc=0.5, voting='soft', knne=False,
-                                mode='weighting',
-                                selection_threshold=0.9, DFP=False, with_IH=False, knn_metric=knn_metric,
-                                meta_feature=meta_feature)
-    name = 'META-DES'
-    # Fit the DS techniques
-    method.fit(X_train, y_train)
-    y_pred = method.predict(X_test, meta_feature_test) 
-    score = accuracy_score(y_test, y_pred)
-    y_prob = method.predict_proba(X_test, meta_feature_test)[:,1]
+**Example usage:**
+
+```python
+method = METADES(pool_classifiers, random_state=rng, k=k, Kp=Kp, DSEL_perc=0.5, voting='soft', knne=False,
+                 mode='weighting', selection_threshold=0.9, DFP=False, with_IH=False, knn_metric=knn_metric,
+                 meta_feature=meta_feature)
+method.fit(X_train, y_train)
+y_pred = method.predict(X_test, meta_feature_test)
+score = accuracy_score(y_test, y_pred)
+y_prob = method.predict_proba(X_test, meta_feature_test)[:, 1]
+```
+---
